@@ -14,7 +14,47 @@ const docTemplate = `{
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
-    "paths": {}
+    "paths": {
+        "/activities": {
+            "post": {
+                "description": "Принимает JSON и сохраняет активность в базу данных",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "activities"
+                ],
+                "summary": "Создать новую активность",
+                "parameters": [
+                    {
+                        "description": "Данные активности",
+                        "name": "activity",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Activity"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Activity"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.Activity": {
+            "type": "object"
+        }
+    }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it

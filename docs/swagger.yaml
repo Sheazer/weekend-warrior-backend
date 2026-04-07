@@ -1,9 +1,34 @@
 basePath: /api/v1
+definitions:
+  models.Activity:
+    type: object
 host: localhost:8080
 info:
   contact: {}
   description: Это сервер для поиска активностей на выходные.
   title: Weekend Warrior API
   version: "1.0"
-paths: {}
+paths:
+  /activities:
+    post:
+      consumes:
+      - application/json
+      description: Принимает JSON и сохраняет активность в базу данных
+      parameters:
+      - description: Данные активности
+        in: body
+        name: activity
+        required: true
+        schema:
+          $ref: '#/definitions/models.Activity'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Activity'
+      summary: Создать новую активность
+      tags:
+      - activities
 swagger: "2.0"

@@ -1,12 +1,12 @@
 package main
 
 import (
+	_ "github.com/Erzhan/weekend-warrior-backend/docs" // Важно: импорт сгенерированных доков
 	"github.com/Erzhan/weekend-warrior-backend/internal/db"
 	"github.com/Erzhan/weekend-warrior-backend/internal/handlers"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"     // swagger embed files
 	ginSwagger "github.com/swaggo/gin-swagger" // импорт swagger
-	// Важно: импорт сгенерированных доков
 )
 
 // @title Weekend Warrior API

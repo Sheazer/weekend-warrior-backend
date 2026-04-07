@@ -7,7 +7,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetUserHandler — функция, которая будет отвечать за запрос
+// CreateActivity godoc
+// @Summary Создать новую активность
+// @Description Принимает JSON и сохраняет активность в базу данных
+// @Tags activities
+// @Accept  json
+// @Produce  json
+// @Param activity body models.Activity true "Данные активности"
+// @Success 201 {object} models.Activity
+// @Router /activities [post]
 func GetUserHandler(c *gin.Context) {
 	user := models.User{
 		Name:  "Erzhan",
