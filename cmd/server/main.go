@@ -10,10 +10,11 @@ func main() {
 	// 1. Подключаем базу
 	db.InitDB()
 
-	r := gin.Default()
+	api := gin.Default()
 
-	r.GET("/user/:id", handlers.GetUserByIDHandler)
-    // Сюда добавим POST для создания юзера чуть позже
+	api.GET("/user/:id", handlers.GetUserByIDHandler)
+	api.GET("/activities", handlers.GetActivities)
+    api.POST("/activities", handlers.CreateActivity)
 
-	r.Run(":8080")
+	api.Run(":8080")
 }
