@@ -24,7 +24,9 @@ func main() {
 
 	api.GET("/user/:id", handlers.GetUserByIDHandler)
 	api.GET("/activities", handlers.GetActivities)
-    api.POST("/activities", handlers.CreateActivity)
-
+	api.POST("/activities", handlers.CreateActivity)
+	api.POST("/activities/:id/join", handlers.JoinActivityHandler)
+	api.PUT("/activities/:id/participants/:user_id/approve", handlers.ApproveParticipantHandler)
+	api.DELETE("/activities/:id/participants/:user_id/reject", handlers.RejectParticipantHandler)
 	api.Run(":8080")
 }
