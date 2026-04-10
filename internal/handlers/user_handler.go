@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/Erzhan/weekend-warrior-backend/internal/db"
 	"github.com/Erzhan/weekend-warrior-backend/internal/models"
 	"github.com/gin-gonic/gin"
 )
@@ -26,17 +27,24 @@ func GetUserHandler(c *gin.Context) {
 
 
 func GetUserByIDHandler(c *gin.Context) {
-	// Достаем ID из URL (все, что после /user/)
-	id := c.Param("id") 
+    // 1. Достаем ID из параметров пути
+    id := c.Param("id") 
 
-	user := models.User{
-		Name:  "User Name",
-		Email: "user@example.com",
-	}
+    var user models.User
 
-	c.JSON(http.StatusOK, gin.H{
-		"requested_id": id,
-		"user_data":    user,
-		"message":      "Данные успешно получены",
-	})
+    // 2. Ищем юзера в базе по ID
+    // .First() автоматически добавит LIMIT 1 и найдет по первичному ключу
+    if err := db.DB.First(&user, id).Error; err != nil {
+        // Если запись не найдена
+        c.JSON(http.StatusNotFound, gin.H{
+            "error": "Пользователь не найден, u know?",
+        })
+        return
+    }
+
+    // 3. Если нашли — возвращаем данные
+    c.JSON(http.StatusOK, gin.H{
+        "user_data": user,
+        "message":   "Данные успешно получены",
+    })
 }
