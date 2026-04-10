@@ -19,4 +19,6 @@ func InitDB() {
 	// Автоматическое создание таблицы на основе структуры User
 	DB.AutoMigrate(&models.User{})
 	DB.AutoMigrate(&models.Activity{})
+	DB.AutoMigrate(&models.Participant{})
+	DB.AutoMigrate(&models.ActivityLog{})
 }
