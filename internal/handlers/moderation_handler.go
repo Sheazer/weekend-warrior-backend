@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -80,43 +81,57 @@ func ApproveParticipantHandler(c *gin.Context) {
 
 // RejectParticipantHandler отклоняет заявку
 func RejectParticipantHandler(c *gin.Context) {
-	activityID, _ := strconv.Atoi(c.Param("id"))
-	userID, _ := strconv.Atoi(c.Param("user_id"))
+    activityID, _ := strconv.Atoi(c.Param("id"))
+    userID, _ := strconv.Atoi(c.Param("user_id"))
 
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		// Проверяем, что текущий пользователь - организатор
-		var activity models.Activity
-		tx.First(&activity, activityID)
-		if activity.OrganizerID != uint(getOrganizerID(c)) {
-			return &NotOrganizerError{}
-		}
+    err := db.DB.Transaction(func(tx *gorm.DB) error {
+        // // 1. Проверяем существование активности и права
+        // var activity models.Activity
+        // if err := tx.First(&activity, activityID).Error; err != nil {
+        //     return err // Активность не найдена
+        // }
+        
+        // if activity.OrganizerID != uint(getOrganizerID(c)) {
+        //     return &NotOrganizerError{}
+        // }
 
-		// Удаляем заявку (или меняем статус на rejected)
-		if err := tx.Where("activity_id = ? AND user_id = ? AND status = ?",
-			activityID, userID, "pending").
-			Delete(&models.Participant{}).Error; err != nil {
-			return err
-		}
+        // 2. МЕНЯЕМ СТАТУС ВМЕСТО УДАЛЕНИЯ
+        // Используем .Model(), чтобы GORM знал, куда писать
+        result := tx.Model(&models.Participant{}).
+            Where("activity_id = ? AND user_id = ? AND status = ?", activityID, userID, "pending").
+            Update("status", "rejected")
 
-		// Логируем
-		log := models.ActivityLog{
-			ActivityID: uint(activityID),
-			UserID:     uint(userID),
-			Action:     "rejected",
-			Details:    "rejected by organizer",
-		}
-		tx.Create(&log)
+        if result.Error != nil {
+            return result.Error
+        }
 
-		c.JSON(http.StatusOK, gin.H{
-			"status":  "rejected",
-			"message": "User request has been rejected",
-		})
-		return nil
-	})
+        // ПРОВЕРКА: а была ли вообще такая запись? 
+        // Если RowsAffected == 0, значит юзера нет в pending (уже одобрен или не подавал)
+        if result.RowsAffected == 0 {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "No pending request found for this user"})
+            return fmt.Errorf("no records updated")
+        }
 
-	if err != nil {
-		c.JSON(http.StatusForbidden, gin.H{"error": "only organizer can reject"})
-	}
+        // 3. Логируем
+        log := models.ActivityLog{
+            ActivityID: uint(activityID),
+            UserID:     uint(userID),
+            Action:     "rejected",
+            Details:    "rejected by organizer",
+        }
+        tx.Create(&log)
+
+        c.JSON(http.StatusOK, gin.H{
+            "status":  "rejected",
+            "message": "User request has been rejected",
+        })
+        return nil
+    })
+
+    if err != nil {
+        // Важно: не всегда ошибка значит "not organizer". Может быть "not found"
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+    }
 }
 
 // Вспомогательные функции и ошибки
