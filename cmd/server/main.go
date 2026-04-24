@@ -29,5 +29,6 @@ func main() {
 	api.PUT("/activities/:id/participants/:user_id/approve", handlers.ApproveParticipantHandler)
 	api.DELETE("/activities/:id/participants/:user_id/reject", handlers.RejectParticipantHandler)
 	api.GET("/activities/:id/chat", handlers.GetActivityMessages)
+	api.POST("/activities/:id/chat", handlers.CreateMessage)
 	api.Run(":8080")
 }
