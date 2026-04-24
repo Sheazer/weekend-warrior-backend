@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/Erzhan/weekend-warrior-backend/internal/db"
 	"github.com/Erzhan/weekend-warrior-backend/internal/models"
@@ -26,4 +27,25 @@ func GetActivityMessages(c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, messages)
+}
+
+
+func CreateMessage(c *gin.Context) {
+	activityID, _:= strconv.Atoi(c.Param("id"))
+
+	var newMessage models.Message
+
+	newMessage.ActivityID = activityID
+
+
+	if err := c.ShouldBindJSON(&newMessage); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+        return
+    }
+
+	if err := db.DB.Create(&newMessage).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not save message"})
+        return
+    }
+	c.JSON(http.StatusCreated, newMessage)
 }
