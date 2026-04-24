@@ -13,3 +13,11 @@ type Activity struct {
 	OrganizerID    uint   `json:"organizer_id"`
 	NeedModeration bool   `json:"need_moderation"` // true = ручное подтверждение
 }
+
+type Message struct {
+	gorm.Model
+	SenderID	   int    `json:"sender_id"` 
+	ActivityID     int    `json:"activity_id"`
+	Content        string `json:"content"`
+	SentAt         string `json:"sent_at"`
+}
