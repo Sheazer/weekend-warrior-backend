@@ -19,5 +19,4 @@ type Message struct {
 	SenderID	   int    `json:"sender_id"` 
 	ActivityID     int    `json:"activity_id"`
 	Content        string `json:"content"`
-	SentAt         string `json:"sent_at"`
 }
