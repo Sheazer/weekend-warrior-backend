@@ -25,7 +25,7 @@ WORKDIR /root/
 # Копируем бинарник из билдера
 COPY --from=builder /app/main .
 # Копируем файл базы (если он есть в корне проекта)
-COPY --from=builder /app/warriors.db .
+# COPY --from=builder /app/warriors.db .
 
 EXPOSE 8080
 
