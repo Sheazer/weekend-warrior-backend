@@ -14,4 +14,6 @@ type Participant struct {
 	CreatedAt  time.Time      `json:"created_at"`
 	UpdatedAt  time.Time      `json:"updated_at"`
 	DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`
+	User       User           `json:"user,omitempty" gorm:"foreignKey:UserID"`
+	Activity   Activity       `json:"activity,omitempty" gorm:"foreignKey:ActivityID"`
 }
