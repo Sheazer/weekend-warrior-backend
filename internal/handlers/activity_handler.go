@@ -59,6 +59,7 @@ func CreateActivity(c *gin.Context) {
 
 	// Устанавливаем статус по умолчанию
 	newActivity.Status = "active"
+	newActivity.NeedModeration = true
 
 	// Сохраняем в SQLite
 	result := db.DB.Create(&newActivity)

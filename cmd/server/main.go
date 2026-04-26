@@ -32,5 +32,7 @@ func main() {
 	api.GET("/users/:id/feedback", handlers.GetOrganizerFeedbackHandler)
 	api.POST("/activities/:id/review", handlers.CreateReviewHandler)
 	api.GET("/activities/:id/reviews", handlers.GetActivityReviewsHandler)
+	api.GET("/activities/:id/chat", handlers.GetActivityMessages)
+	api.POST("/activities/:id/chat", handlers.CreateMessage)
 	api.Run(":8080")
 }

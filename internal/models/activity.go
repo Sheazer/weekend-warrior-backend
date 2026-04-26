@@ -15,3 +15,10 @@ type Activity struct {
 	Organizer      User          `json:"organizer,omitempty" gorm:"foreignKey:OrganizerID"`
 	Participants   []Participant `json:"participants,omitempty"`
 }
+
+type Message struct {
+	gorm.Model
+	SenderID	   int    `json:"sender_id"` 
+	ActivityID     int    `json:"activity_id"`
+	Content        string `json:"content"`
+}
