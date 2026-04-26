@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	_ "github.com/Erzhan/weekend-warrior-backend/docs" // Важно: импорт сгенерированных доков
 	"github.com/Erzhan/weekend-warrior-backend/internal/db"
 	"github.com/Erzhan/weekend-warrior-backend/internal/handlers"
@@ -17,6 +19,7 @@ import (
 func main() {
 	// 1. Подключаем базу
 	db.InitDB()
+	
 
 	api := gin.Default()
 
@@ -30,5 +33,11 @@ func main() {
 	api.DELETE("/activities/:id/participants/:user_id/reject", handlers.RejectParticipantHandler)
 	api.GET("/activities/:id/chat", handlers.GetActivityMessages)
 	api.POST("/activities/:id/chat", handlers.CreateMessage)
-	api.Run(":8080")
+
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080" // дефолт для локалки
+	}
+	api.Run(":" + port)
 }
