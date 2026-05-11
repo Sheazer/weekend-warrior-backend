@@ -2,7 +2,7 @@ package db
 
 import (
 	"github.com/Erzhan/weekend-warrior-backend/internal/models"
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 

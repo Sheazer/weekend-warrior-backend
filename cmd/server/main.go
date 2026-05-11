@@ -1,10 +1,12 @@
 package main
 
 import (
+	"time" // time
+
 	_ "github.com/Erzhan/weekend-warrior-backend/docs" // Важно: импорт сгенерированных доков
 	"github.com/Erzhan/weekend-warrior-backend/internal/db"
 	"github.com/Erzhan/weekend-warrior-backend/internal/handlers"
-	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/cors" // cors import
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"     // swagger embed files
 	ginSwagger "github.com/swaggo/gin-swagger" // импорт swagger
@@ -21,7 +23,13 @@ func main() {
 
 	api := gin.Default()
 
-	api.Use(cors.Default())
+	api.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+		AllowHeaders:     []string{"Origin", "Content-Type"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	api.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
