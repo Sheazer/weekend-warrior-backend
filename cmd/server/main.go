@@ -1,9 +1,10 @@
 package main
 
 import (
-	_ "github.com/Erzhan/weekend-warrior-backend/docs" // Важно: импорт сгенерированных доков
+	_ "github.com/Erzhan/weekend-warrior-backend/docs"
 	"github.com/Erzhan/weekend-warrior-backend/internal/db"
 	"github.com/Erzhan/weekend-warrior-backend/internal/handlers"
+	"github.com/Erzhan/weekend-warrior-backend/internal/middleware"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"     // swagger embed files
@@ -23,19 +24,34 @@ func main() {
 
 	api.Use(cors.Default())
 
+	// --- 🔴 ПУБЛИЧНЫЕ РОУТЫ (Доступны абсолютно всем) ---
 	api.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-
-	api.GET("/user/:id", handlers.GetUserByIDHandler)
+	api.POST("/register", handlers.RegisterHandler)
+	api.POST("/login", handlers.LoginHandler)
+	
+	// Главную страницу и просмотр ивентов оставляем открытыми, чтобы неавторизованные гости тоже видели список
 	api.GET("/activities", handlers.GetActivities)
-	api.POST("/activities", handlers.CreateActivity)
-	api.POST("/activities/:id/join", handlers.JoinActivityHandler)
-	api.PUT("/activities/:id/participants/:user_id/approve", handlers.ApproveParticipantHandler)
-	api.DELETE("/activities/:id/participants/:user_id/reject", handlers.RejectParticipantHandler)
-	api.PATCH("/activities/:id/status", handlers.UpdateActivityStatusHandler)
+	api.GET("/user/:id", handlers.GetUserByIDHandler)
 	api.GET("/users/:id/feedback", handlers.GetOrganizerFeedbackHandler)
-	api.POST("/activities/:id/review", handlers.CreateReviewHandler)
 	api.GET("/activities/:id/reviews", handlers.GetActivityReviewsHandler)
-	api.GET("/activities/:id/chat", handlers.GetActivityMessages)
-	api.POST("/activities/:id/chat", handlers.CreateMessage)
+
+	// --- 🔒 ЗАЩИЩЕННЫЕ РОУТЫ (Только для тех, у кого есть JWT-токен в Headers) ---
+	// Создаем изолированную группу роутов
+	protected := api.Group("/")
+	
+	// Подключаем Middleware авторизации к этой группе
+	protected.Use(middleware.AuthMiddleware())
+	{
+		// Все роуты внутри этих фигурных скобок автоматически требуют токен!
+		protected.POST("/activities", handlers.CreateActivity)
+		protected.POST("/activities/:id/join", handlers.JoinActivityHandler)
+		protected.PUT("/activities/:id/participants/:user_id/approve", handlers.ApproveParticipantHandler)
+		protected.DELETE("/activities/:id/participants/:user_id/reject", handlers.RejectParticipantHandler)
+		protected.PATCH("/activities/:id/status", handlers.UpdateActivityStatusHandler)
+		protected.POST("/activities/:id/review", handlers.CreateReviewHandler)
+		protected.GET("/activities/:id/chat", handlers.GetActivityMessages)
+		protected.POST("/activities/:id/chat", handlers.CreateMessage)
+	}
+
 	api.Run(":8080")
 }
