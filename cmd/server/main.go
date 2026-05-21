@@ -21,8 +21,12 @@ func main() {
 	db.InitDB()
 
 	api := gin.Default()
+	config := cors.DefaultConfig()
+	config.AllowAllOrigins = true // Для локальной разработки — идеально
+	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization"} // 🔥 Явно разрешаем Authorization
 
-	api.Use(cors.Default())
+	api.Use(cors.New(config))
 
 	// --- 🔴 ПУБЛИЧНЫЕ РОУТЫ (Доступны абсолютно всем) ---
 	api.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -37,7 +41,7 @@ func main() {
 
 	// --- 🔒 ЗАЩИЩЕННЫЕ РОУТЫ (Только для тех, у кого есть JWT-токен в Headers) ---
 	// Создаем изолированную группу роутов
-	protected := api.Group("/")
+	protected := api.Group("/api")
 	
 	// Подключаем Middleware авторизации к этой группе
 	protected.Use(middleware.AuthMiddleware())
