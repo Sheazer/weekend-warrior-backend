@@ -48,25 +48,38 @@ func GetActivities(c *gin.Context) {
 	c.JSON(http.StatusOK, activities)
 }
 
-// Тут мы принимаем JSON от фронтенда и сохраняем его в базу.
+
 func CreateActivity(c *gin.Context) {
-	var newActivity models.Activity
+    var newActivity models.Activity
 
-	if err := c.ShouldBindJSON(&newActivity); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+    if err := c.ShouldBindJSON(&newActivity); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
 
-	// Устанавливаем статус по умолчанию
-	newActivity.Status = "active"
-	newActivity.NeedModeration = true
+    userID, exists := c.Get("user_id") // Проверь, как именно называется ключ в твоем AuthMiddleware (userID или user_id)
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Пользователь не идентифицирован"})
+        return
+    }
 
-	// Сохраняем в SQLite
-	result := db.DB.Create(&newActivity)
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось создать событие"})
-		return
-	}
+    // Приводим тип из интерфейса к uint (так как в gorm.Model ID имеет тип uint)
+    if id, ok := userID.(uint); ok {
+        newActivity.OrganizerID = id
+    } else if idFloat, ok := userID.(float64); ok { // На случай, если JWT парсит числа как float64
+        newActivity.OrganizerID = uint(idFloat)
+    }
 
-	c.JSON(http.StatusCreated, newActivity)
+    // Устанавливаем статус по умолчанию
+    newActivity.Status = "active"
+    newActivity.NeedModeration = true
+
+    // Сохраняем в SQLite
+    result := db.DB.Create(&newActivity)
+    if result.Error != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось создать событие"})
+        return
+    }
+
+    c.JSON(http.StatusCreated, newActivity)
 }
