@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/Erzhan/weekend-warrior-backend/internal/db"
@@ -8,46 +9,59 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Тут мы делаем фильтрацию по категориям и дате и отдаем обратно
 func GetActivities(c *gin.Context) {
-	category := c.Query("category")
-	date := c.Query("date")
-	status := c.Query("status") // принимаем параметр status из URL
+    category := c.Query("category")
+    date := c.Query("date")
+    status := c.Query("status") 
+    include := c.Query("include") 
+	// 🔥 ДОБАВЬ ЭТИ ЛОГИ: они покажут, что видит сервер в консоли Go
+    fmt.Println("=== ВХОДЯЩИЙ ЗАПРОС ===")
+    fmt.Println("Полноценный URL:", c.Request.URL.String())
+    fmt.Println("Значение include:", include)
+    // ===================================
 
-	var activities []models.Activity
-	query := db.DB
+    var activities []models.Activity
+    query := db.DB
 
-	// Фильтр по статусу (если передан)
-	if status != "" {
-		if status == "all" {
-			// Не добавляем фильтр, показываем всё
-		} else if status == "active" || status == "finished" || status == "cancelled" {
-			query = query.Where("status = ?", status)
-		} else {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "invalid status. Allowed: active, finished, cancelled, all",
-			})
-			return
-		}
-	} else {
-		// По умолчанию показываем только активные
-		query = query.Where("status = ?", "active")
-	}
+    // Фильтр по статусу
+    if status != "" {
+        if status == "all" {
+            // Показываем всё
+        } else if status == "active" || status == "finished" || status == "cancelled" {
+            query = query.Where("status = ?", status)
+        } else {
+            c.JSON(http.StatusBadRequest, gin.H{
+                "error": "invalid status. Allowed: active, finished, cancelled, all",
+            })
+            return
+        }
+    } else {
+        query = query.Where("status = ?", "active")
+    }
 
-	// Фильтр по категории
-	if category != "" {
-		query = query.Where("category = ?", category)
-	}
+    // Фильтр по категории
+    if category != "" {
+        query = query.Where("category = ?", category)
+    }
 
-	// Фильтр по дате
-	if date != "" {
-		query = query.Where("date = ?", date)
-	}
+    // Фильтр по дате
+    if date != "" {
+        query = query.Where("date = ?", date)
+    }
 
-	query.Find(&activities)
-	c.JSON(http.StatusOK, activities)
+    if include == "participants" {
+		fmt.Println("🚀 МАГИЯ: Зашли в Preload!")
+        query = query.Preload("Participants")
+    }
+
+    // Выполняем итоговый запрос
+    if err := query.Find(&activities).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch activities"})
+        return
+    }
+    
+    c.JSON(http.StatusOK, activities)
 }
-
 
 func CreateActivity(c *gin.Context) {
     var newActivity models.Activity
@@ -57,8 +71,8 @@ func CreateActivity(c *gin.Context) {
         return
     }
 
-    userID, exists := c.Get("user_id") // Проверь, как именно называется ключ в твоем AuthMiddleware (userID или user_id)
-    if !exists {
+    userID, ok := c.Get("user_id") // Проверь, как именно называется ключ в твоем AuthMiddleware (userID или user_id)
+    if !ok {
         c.JSON(http.StatusUnauthorized, gin.H{"error": "Пользователь не идентифицирован"})
         return
     }
