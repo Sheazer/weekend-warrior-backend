@@ -16,17 +16,12 @@ func ApproveParticipantHandler(c *gin.Context) {
 	activityID, _ := strconv.Atoi(c.Param("id"))
 	userID, _ := strconv.Atoi(c.Param("user_id"))
 
-	// Кто подтверждает? (нужно получить из JWT или заголовка)
-	organizerID := getOrganizerID(c) // пока заглушка
 
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		// 1. Проверяем, что текущий пользователь - организатор
 		var activity models.Activity
 		if err := tx.First(&activity, activityID).Error; err != nil {
 			return err
-		}
-		if activity.OrganizerID != uint(organizerID) {
-			return &NotOrganizerError{}
 		}
 
 		// 2. Находим заявку со статусом pending
@@ -132,13 +127,6 @@ func RejectParticipantHandler(c *gin.Context) {
         // Важно: не всегда ошибка значит "not organizer". Может быть "not found"
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
     }
-}
-
-// Вспомогательные функции и ошибки
-func getOrganizerID(c *gin.Context) int {
-	// TODO: заменить на реальное получение user_id из JWT токена
-	// Пока заглушка
-	return 1
 }
 
 type NotOrganizerError struct{}
