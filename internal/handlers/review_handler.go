@@ -10,9 +10,8 @@ import (
 )
 
 type CreateReviewRequest struct {
-	ReviewerID uint   `json:"reviewer_id" binding:"required"`
-	Rating     int    `json:"rating" binding:"required,min=1,max=5"`
-	Comment    string `json:"comment" binding:"required,max=500"`
+	Rating  int    `json:"rating" binding:"required"`
+	Comment string `json:"comment" binding:"required"`
 }
 
 // CreateReviewHandler создаёт новый отзыв об организаторе
@@ -46,37 +45,45 @@ func CreateReviewHandler(c *gin.Context) {
 		return
 	}
 
-	// 3. Проверяем, что reviewer УЧАСТВОВАЛ в этой активности (статус joined)
+	// 🔒 Извлекаем ID авторизованного пользователя из контекста JWT
+	userIDFromContext, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authorized"})
+		return
+	}
+
+	var currentReviewerID uint
+	switch v := userIDFromContext.(type) {
+	case uint: currentReviewerID = v
+	case int: currentReviewerID = uint(v)
+	case float64: currentReviewerID = uint(v)
+	}
+
+	// 3. Проверяем, что reviewer УЧАСТВОВАЛ в этой активности
 	var participant models.Participant
-	if err := db.DB.Where("activity_id = ? AND user_id = ? AND status = ?",
-		activityID, req.ReviewerID, "joined").First(&participant).Error; err != nil {
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": "you must be a participant to leave a review",
-		})
+	if err := db.DB.Where("activity_id = ? AND user_id = ? AND status = ?", 
+		activityID, currentReviewerID, "joined").First(&participant).Error; err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": "you must be a participant to leave a review"})
 		return
 	}
 
-	// 4. Проверяем, что reviewer НЕ организатор (нельзя оставить отзыв самому себе)
-	if req.ReviewerID == activity.OrganizerID {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "organizer cannot review themselves",
-		})
+	// 4. Проверяем, что reviewer НЕ организатор
+	if currentReviewerID == activity.OrganizerID {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "organizer cannot review themselves"})
 		return
 	}
 
-	// 5. Проверяем, что отзыв ещё не оставлен (один отзыв на активность от пользователя)
+	// 5. Проверяем, что отзыв ещё не оставлен
 	var existingReview models.Review
-	if err := db.DB.Where("reviewer_id = ? AND activity_id = ?",
-		req.ReviewerID, activityID).First(&existingReview).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{
-			"error": "you have already left a review for this activity",
-		})
+	if err := db.DB.Where("reviewer_id = ? AND activity_id = ?", 
+		currentReviewerID, activityID).First(&existingReview).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "you have already left a review for this activity"})
 		return
 	}
 
-	// 6. Создаём отзыв
+	// 6. Создаём отзыв (используем безопасный currentReviewerID)
 	review := models.Review{
-		ReviewerID: req.ReviewerID,
+		ReviewerID: currentReviewerID,
 		RevieweeID: activity.OrganizerID,
 		ActivityID: uint(activityID),
 		Rating:     req.Rating,
@@ -89,9 +96,16 @@ func CreateReviewHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "review created successfully",
-		"review":  review,
-	})
+			"message": "review created successfully",
+			"review": gin.H{
+				"id":          review.ID, // или review.id, в зависимости от вашей базовой модели gorm.Model
+				"reviewer_id": review.ReviewerID,
+				"reviewee_id": review.RevieweeID,
+				"activity_id": review.ActivityID,
+				"rating":      review.Rating,
+				"comment":     review.Comment,
+			},
+		})
 }
 
 // GetOrganizerFeedbackHandler получает отзывы об организаторе
