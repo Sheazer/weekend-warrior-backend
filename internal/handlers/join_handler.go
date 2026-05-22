@@ -23,8 +23,8 @@ func JoinActivityHandler(c *gin.Context) {
     }
 
     // 🔥 БЕРЕМ ИЗ КОНТЕКСТА: Кто авторизован — тот и присоединяется
-    userIDFromContext, exists := c.Get("user_id") 
-    if !exists {
+    userIDFromContext, ok := c.Get("user_id") 
+    if !ok {
         c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authorized"})
         return
     }
