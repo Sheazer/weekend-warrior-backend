@@ -55,7 +55,7 @@ func main() {
 		protected.POST("/activities/:id/review", handlers.CreateReviewHandler)
 		protected.GET("/activities/:id/chat", handlers.GetActivityMessages)
 		protected.POST("/activities/:id/chat", handlers.CreateMessage)
-	}
+	}   
 
 	api.Run(":8080")
 }
