@@ -19,6 +19,7 @@ import (
 func main() {
 	// 1. Подключаем базу
 	db.InitDB()
+	
 
 	api := gin.Default()
 	config := cors.DefaultConfig()
