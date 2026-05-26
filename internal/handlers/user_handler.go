@@ -2,49 +2,48 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/Erzhan/weekend-warrior-backend/internal/db"
 	"github.com/Erzhan/weekend-warrior-backend/internal/models"
 	"github.com/gin-gonic/gin"
 )
 
-// CreateActivity godoc
-// @Summary Создать новую активность
-// @Description Принимает JSON и сохраняет активность в базу данных
-// @Tags activities
-// @Accept  json
-// @Produce  json
-// @Param activity body models.Activity true "Данные активности"
-// @Success 201 {object} models.Activity
-// @Router /activities [post]
-func GetUserHandler(c *gin.Context) {
-	user := models.User{
-		Name:  "Erzhan",
-		Email: "erzhan@example.com",
-	}
-	c.JSON(http.StatusOK, user)
-}
-
 
 func GetUserByIDHandler(c *gin.Context) {
-    // 1. Достаем ID из параметров пути
-    id := c.Param("id") 
+	idStr := c.Param("id")
+	userID, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		return
+	}
 
-    var user models.User
+	// Ищем пользователя
+	var user models.User
+	if err := db.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
 
-    // 2. Ищем юзера в базе по ID
-    // .First() автоматически добавит LIMIT 1 и найдет по первичному ключу
-    if err := db.DB.First(&user, id).Error; err != nil {
-        // Если запись не найдена
-        c.JSON(http.StatusNotFound, gin.H{
-            "error": "Пользователь не найден, u know?",
-        })
-        return
-    }
+	// Получаем активности, где пользователь организатор
+	var organizedActivities []models.Activity
+	db.DB.Where("organizer_id = ?", userID).Find(&organizedActivities)
 
-    // 3. Если нашли — возвращаем данные
-    c.JSON(http.StatusOK, gin.H{
-        "user_data": user,
-        "message":   "Данные успешно получены",
-    })
+	// Получаем активности, где пользователь участник
+	var participations []models.Participant
+	db.DB.Where("user_id = ? AND status = ?", userID, "joined").
+		Preload("Activity").
+		Find(&participations)
+
+	// Собираем активности участника
+	var joinedActivities []models.Activity
+	for _, p := range participations {
+		joinedActivities = append(joinedActivities, p.Activity)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"user":                 user,
+		"organized_activities": organizedActivities,
+		"joined_activities":    joinedActivities,
+	})
 }

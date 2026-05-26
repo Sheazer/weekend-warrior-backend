@@ -21,5 +21,6 @@ func InitDB() {
 	DB.AutoMigrate(&models.Activity{})
 	DB.AutoMigrate(&models.Participant{})
 	DB.AutoMigrate(&models.ActivityLog{})
+	DB.AutoMigrate(&models.Review{})
 	DB.AutoMigrate(&models.Message{})
 }
