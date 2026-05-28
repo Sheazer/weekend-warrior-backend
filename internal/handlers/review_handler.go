@@ -54,14 +54,17 @@ func CreateReviewHandler(c *gin.Context) {
 
 	var currentReviewerID uint
 	switch v := userIDFromContext.(type) {
-	case uint: currentReviewerID = v
-	case int: currentReviewerID = uint(v)
-	case float64: currentReviewerID = uint(v)
+	case uint:
+		currentReviewerID = v
+	case int:
+		currentReviewerID = uint(v)
+	case float64:
+		currentReviewerID = uint(v)
 	}
 
 	// 3. Проверяем, что reviewer УЧАСТВОВАЛ в этой активности
 	var participant models.Participant
-	if err := db.DB.Where("activity_id = ? AND user_id = ? AND status = ?", 
+	if err := db.DB.Where("activity_id = ? AND user_id = ? AND status = ?",
 		activityID, currentReviewerID, "joined").First(&participant).Error; err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": "you must be a participant to leave a review"})
 		return
@@ -75,7 +78,7 @@ func CreateReviewHandler(c *gin.Context) {
 
 	// 5. Проверяем, что отзыв ещё не оставлен
 	var existingReview models.Review
-	if err := db.DB.Where("reviewer_id = ? AND activity_id = ?", 
+	if err := db.DB.Where("reviewer_id = ? AND activity_id = ?",
 		currentReviewerID, activityID).First(&existingReview).Error; err == nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "you have already left a review for this activity"})
 		return
@@ -96,16 +99,16 @@ func CreateReviewHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-			"message": "review created successfully",
-			"review": gin.H{
-				"id":          review.ID, // или review.id, в зависимости от вашей базовой модели gorm.Model
-				"reviewer_id": review.ReviewerID,
-				"reviewee_id": review.RevieweeID,
-				"activity_id": review.ActivityID,
-				"rating":      review.Rating,
-				"comment":     review.Comment,
-			},
-		})
+		"message": "review created successfully",
+		"review": gin.H{
+			"id":          review.ID, // или review.id, в зависимости от вашей базовой модели gorm.Model
+			"reviewer_id": review.ReviewerID,
+			"reviewee_id": review.RevieweeID,
+			"activity_id": review.ActivityID,
+			"rating":      review.Rating,
+			"comment":     review.Comment,
+		},
+	})
 }
 
 // GetOrganizerFeedbackHandler получает отзывы об организаторе
