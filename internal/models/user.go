@@ -8,4 +8,5 @@ type User struct {
 	Email               string        `json:"email" gorm:"unique"` // Почта должна быть уникальной
 	OrganizedActivities []Activity    `json:"organized_activities,omitempty" gorm:"foreignKey:OrganizerID"`
 	Participants        []Participant `json:"participants,omitempty"`
+	Password			string 		  `gorm:"not null" json:"password"`
 }
